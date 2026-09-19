@@ -1,0 +1,315 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ ENUMS ============
+
+enum UserRole {
+  PLATFORM_ADMIN
+  HOSPITAL_ADMIN
+  CAMPAIGN_MANAGER
+  CLINICAL_REVIEWER
+}
+
+enum HospitalStatus {
+  ONBOARDING
+  CONFIGURED
+  READY
+  SUSPENDED
+}
+
+enum CampaignStatus {
+  DRAFT
+  READY
+  SCHEDULED
+  RUNNING
+  PAUSED
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+enum TaskStatus {
+  PENDING
+  SCHEDULED
+  CALLING
+  CONNECTED
+  COMPLETED
+  NO_ANSWER
+  BUSY
+  VOICEMAIL
+  DROPPED
+  RETRY_SCHEDULED
+  CALLBACK_SCHEDULED
+  ESCALATED
+  MANUAL_FOLLOW_UP
+  FAILED
+}
+
+enum EscalationStatus {
+  OPEN
+  ASSIGNED
+  IN_REVIEW
+  WAITING_FOR_INFORMATION
+  RESOLVED
+  CLOSED
+}
+
+enum TriageClassification {
+  ROUTINE
+  CONCERNING
+  URGENT
+  UNCERTAIN
+}
+enum EhrRecordType {
+  COMMUNICATION
+  OBSERVATION
+  FOLLOW_UP_TASK
+  ESCALATION_RECORD
+  ENCOUNTER_UPDATE
+}
+
+// ============ CORE TENANT MODELS ============
+
+model Hospital {
+  id                String         @id @default(uuid())
+  name              String
+  timezone          String         @default("UTC")
+  status            HospitalStatus @default(ONBOARDING)
+  callingHoursStart String         @default("09:00")
+  callingHoursEnd   String         @default("18:00")
+  outboundCapacity  Int            @default(10)
+  contactEmail      String?
+  contactPhone      String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  users        User[]
+  patients     Patient[]
+  campaigns    Campaign[]
+  protocols    Protocol[]
+  escalations  Escalation[]
+  auditLogs    AuditLog[]
+}
+
+model User {
+  id           String   @id @default(uuid())
+  hospitalId   String?
+  hospital     Hospital? @relation(fields: [hospitalId], references: [id])
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole
+  createdAt    DateTime @default(now())
+
+  assignedEscalations Escalation[] @relation("AssignedReviewer")
+}
+
+// ============ PATIENT / HEALTHCARE DATA ============
+
+model Patient {
+  id                String   @id @default(uuid())
+  hospitalId        String
+  hospital          Hospital @relation(fields: [hospitalId], references: [id])
+
+  mrn               String
+  firstName         String
+  lastName          String
+  phone             String
+  preferredContactTime String?
+
+  encounters        Encounter[]
+  outreachTasks     OutreachTask[]
+  calls             Call[]
+  escalations       Escalation[]
+
+  createdAt         DateTime @default(now())
+}
+
+model Encounter {
+  id                  String   @id @default(uuid())
+  patientId           String
+  patient             Patient  @relation(fields: [patientId], references: [id])
+
+  careSetting         String
+  dischargeTimestamp  DateTime
+  followUpWindowHours Int      @default(72)
+  conditions          String[]
+  medications         String[]
+  riskLevel           String   @default("low")
+  instructions        String?
+
+  createdAt           DateTime @default(now())
+}
+
+// ============ PROTOCOLS / KNOWLEDGE ============
+
+model Protocol {
+  id          String   @id @default(uuid())
+  hospitalId  String
+  hospital    Hospital @relation(fields: [hospitalId], references: [id])
+
+  title       String
+  category    String
+  content     String
+  redFlags    String[]
+  createdAt   DateTime @default(now())
+}
+
+// ============ CAMPAIGNS ============
+
+model Campaign {
+  id                  String         @id @default(uuid())
+  hospitalId          String
+  hospital            Hospital       @relation(fields: [hospitalId], references: [id])
+
+  name                String
+  description         String?
+  status              CampaignStatus @default(DRAFT)
+
+  eligibilityCriteria Json
+  followUpWindowHours Int            @default(72)
+  priority            Int            @default(5)
+  maxRetries          Int            @default(3)
+  outboundCapacity    Int            @default(10)
+
+  startDate           DateTime?
+  endDate             DateTime?
+
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  outreachTasks       OutreachTask[]
+  calls               Call[]
+  escalations         Escalation[]
+}
+
+// ============ QUEUE / OUTREACH TASKS ============
+
+model OutreachTask {
+  id                String     @id @default(uuid())
+  campaignId        String
+  campaign          Campaign   @relation(fields: [campaignId], references: [id])
+  patientId         String
+  patient           Patient    @relation(fields: [patientId], references: [id])
+
+  status            TaskStatus @default(PENDING)
+  priorityScore     Float      @default(0)
+
+  attemptCount      Int        @default(0)
+  maxAttempts       Int        @default(3)
+
+  clinicalDeadline  DateTime
+  scheduledFor      DateTime?
+
+  lockedBy          String?
+  lockedAt          DateTime?
+
+  callbackRequestedAt DateTime?
+
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  calls             Call[]
+
+  @@index([campaignId, status])
+  @@index([status, scheduledFor])
+}
+
+// ============ CALLS (conversation + AI outputs) ============
+
+model Call {
+  id               String   @id @default(uuid())
+  outreachTaskId   String
+  outreachTask     OutreachTask @relation(fields: [outreachTaskId], references: [id])
+  campaignId       String
+  campaign         Campaign @relation(fields: [campaignId], references: [id])
+  patientId        String
+  patient          Patient  @relation(fields: [patientId], references: [id])
+
+  startedAt        DateTime @default(now())
+  endedAt          DateTime?
+  outcome          TaskStatus
+
+  transcript       Json?
+  triageResult     Json?
+  escalationResult Json?
+  documentation    String?
+
+  createdAt        DateTime @default(now())
+}
+
+// ============ ESCALATIONS ============
+
+model Escalation {
+  id                String            @id @default(uuid())
+  hospitalId        String
+  hospital          Hospital          @relation(fields: [hospitalId], references: [id])
+  campaignId        String
+  campaign          Campaign          @relation(fields: [campaignId], references: [id])
+  patientId         String
+  patient           Patient           @relation(fields: [patientId], references: [id])
+
+  status            EscalationStatus  @default(OPEN)
+  classification    TriageClassification
+  triggerReason     String
+  evidence          Json
+
+  assignedReviewerId String?
+  assignedReviewer   User?            @relation("AssignedReviewer", fields: [assignedReviewerId], references: [id])
+
+  resolution         String?
+  resolvedAt          DateTime?
+
+  createdAt           DateTime       @default(now())
+  updatedAt            DateTime      @updatedAt
+}
+
+// ============ AUDIT ============
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  hospitalId  String?
+  hospital    Hospital? @relation(fields: [hospitalId], references: [id])
+
+  actorType   String
+  actorId     String?
+  action      String
+  entityType  String
+  entityId    String
+  metadata    Json?
+
+  createdAt   DateTime @default(now())
+
+  @@index([hospitalId, createdAt])
+}
+model EhrSyncRecord {
+  id         String        @id @default(uuid())
+  hospitalId String
+  patientId  String
+  type       EhrRecordType
+  payload    Json
+  success    Boolean       @default(true)
+  error      String?
+  createdAt  DateTime      @default(now())
+
+  @@index([hospitalId, patientId])
+}
+model Notification {
+  id              String   @id @default(uuid())
+  hospitalId      String
+  escalationId    String?
+  recipientRole   String?
+  recipientUserId String?
+  channel         String   // "dashboard" | "email" | "sms" (simulated -- see known-limitations.md)
+  message         String
+  delivered       Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  @@index([hospitalId, createdAt])
+}

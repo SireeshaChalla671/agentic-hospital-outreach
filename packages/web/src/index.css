@@ -1,0 +1,61 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f4f6f8;
+  color: #1a1a2e;
+}
+.app-shell { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 220px;
+  background: #1a1a2e;
+  color: white;
+  padding: 20px;
+}
+.sidebar h2 { font-size: 18px; margin-bottom: 24px; }
+.sidebar a {
+  display: block;
+  color: #cbd5e1;
+  text-decoration: none;
+  padding: 10px 0;
+  font-size: 14px;
+}
+.sidebar a:hover { color: white; }
+.main { flex: 1; padding: 32px; overflow-y: auto; }
+.card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  margin-bottom: 20px;
+}
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-box { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.stat-box .value { font-size: 28px; font-weight: 700; }
+.stat-box .label { font-size: 13px; color: #64748b; margin-top: 4px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+th { background: #f8fafc; font-weight: 600; color: #475569; }
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge.OPEN, .badge.PENDING, .badge.CONCERNING { background: #fef3c7; color: #92400e; }
+.badge.URGENT, .badge.ESCALATED, .badge.FAILED { background: #fee2e2; color: #991b1b; }
+.badge.RESOLVED, .badge.COMPLETED, .badge.ROUTINE, .badge.CLOSED { background: #d1fae5; color: #065f46; }
+.badge.RUNNING, .badge.CALLING, .badge.ASSIGNED { background: #dbeafe; color: #1e40af; }
+button {
+  background: #1a1a2e; color: white; border: none; padding: 8px 16px;
+  border-radius: 6px; cursor: pointer; font-size: 14px;
+}
+button:hover { opacity: 0.9; }
+input, select, textarea {
+  padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; width: 100%;
+}
+label { font-size: 13px; font-weight: 600; color: #334155; display: block; margin-bottom: 4px; margin-top: 12px; }
+.login-box { max-width: 380px; margin: 100px auto; }
+h1 { font-size: 22px; }
+h3 { margin-top: 0; }
