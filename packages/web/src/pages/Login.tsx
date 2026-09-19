@@ -19,8 +19,9 @@ export default function Login() {
     }
   }
 
-  return (
-    <div className="login-box card">
+    return (
+    <div className="login-page">
+    <div className="login-box">
       <h1>Hospital Outreach Platform</h1>
       <p style={{ color: "#64748b", fontSize: 14 }}>Sign in to continue</p>
       <form onSubmit={handleSubmit}>
@@ -31,9 +32,10 @@ export default function Login() {
         {error && <p style={{ color: "#dc2626", fontSize: 13 }}>{error}</p>}
         <button style={{ marginTop: 16, width: "100%" }} type="submit">Sign In</button>
       </form>
-      <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 16 }}>
+            <p className="demo-hint">
         Demo: admin@platform.com / password123
       </p>
+    </div>
     </div>
   );
 }

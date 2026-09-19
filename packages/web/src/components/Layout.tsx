@@ -20,12 +20,10 @@ export default function Layout() {
           <Link to="/queue">Queue</Link>
           <Link to="/escalations">Escalations</Link>
         </nav>
-        <div style={{ marginTop: 40, fontSize: 12, color: "#94a3b8" }}>
-          <div>{user?.name}</div>
+                <div className="sidebar-footer">
+          <div className="user-name">{user?.name}</div>
           <div>{user?.role}</div>
-          <button onClick={handleLogout} style={{ marginTop: 10, background: "#334155" }}>
-            Log out
-          </button>
+          <button onClick={handleLogout}>Log out</button>
         </div>
       </div>
       <div className="main">
