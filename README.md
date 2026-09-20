@@ -1,3 +1,18 @@
+## Live Deployment
+
+- **Frontend:** https://agentic-hospital-outreach.vercel.app/
+- **Backend API:** https://agentic-hospital-outreach-production.up.railway.app
+- **Health check:** https://agentic-hospital-outreach-production.up.railway.app/health
+
+### Demo Credentials
+
+| Role | Email | Password |
+|---|---|---|
+| Platform Admin | admin@platform.com | password123 |
+| Hospital Admin (General City) | hospitaladmin@general.city.hospital.com | password123 |
+| Campaign Manager (General City) | campaignmanager@general.city.hospital.com | password123 |
+| Clinical Reviewer (General City) | reviewer@general.city.hospital.com | password123 |
+
 # Multi-Hospital Post-Discharge Outreach Platform
 
 An AI-powered, multi-tenant healthcare operations platform for automating
